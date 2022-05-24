@@ -1,4 +1,4 @@
-module real-time-report-backend
+module github.com/JijiaZan/real-time-report-backend
 
 go 1.15
 
