@@ -7,6 +7,7 @@ import (
 	"github.com/JijiaZan/real-time-report-backend/dao"
 	"github.com/gin-gonic/gin"
 	"time"
+	"github.com/google/uuid"
 )
 
 type SellProductRequest struct {
@@ -53,6 +54,7 @@ func SellProductQuery(productId int, clientId int, quantity int, accountId int, 
 	sqlStr := "select sum(quantity) as count from inventory_moving_recorder where product_id=?" //对所有product进行累计计算
 	err = tx.QueryRow(sqlStr, productId).Scan(&count)
 	if err != nil {
+		fmt.Printf("get quantity fail:%s\n", err)
 		return err
 	}
 	if count < quantity {
@@ -60,7 +62,7 @@ func SellProductQuery(productId int, clientId int, quantity int, accountId int, 
 	}
 
 	//找到目前未销售完毕的product_id,product_batch_id,sum(quantity) 分组组合
-	sqlStr2 := "select product_id,product_batch_id,sum(quantity),event_id as quantity from inventory_moving_recorder where product_id = ? group by product_batch_id having (quantity)>0 order by product_batch_id"
+	sqlStr2 := "select product_id,product_batch_id,sum(quantity),event_id as quantity from inventory_moving_recorder where product_id = ? group by product_batch_id having sum(quantity)>0 order by product_batch_id"
 	rows, err := tx.Query(sqlStr2, productId)
 	if err != nil {
 		fmt.Printf("query data failed，err:%s\n", err)
@@ -75,6 +77,7 @@ func SellProductQuery(productId int, clientId int, quantity int, accountId int, 
 		if err != nil {
 			return err
 		}
+		fmt.Print(productBatchInfo_)
 		productBatchInfo.PushBack(productBatchInfo_)
 	}
 
@@ -83,10 +86,13 @@ func SellProductQuery(productId int, clientId int, quantity int, accountId int, 
 	sqlStr3 := "select price from product_info where product_id = ?"
 	err = tx.QueryRow(sqlStr3, productId).Scan(&price)
 	if err != nil {
+		fmt.Printf("get product price failed，err:%s\n", err)
 		return err
 	}
 
-	eventId := "111111" //获取一个全局唯一id
+	uuid := uuid.New()
+	eventId := uuid.String()
+	//eventId := "222222" //获取一个全局唯一id
 	cashFlowPrice := float64(quantity) * price
 
 	//循环遍历满足要求的batch_id list，判断数量是否满足要求。若不满足要求，依次遍历后面的数据 product_id,batch_id,quantity
@@ -99,9 +105,11 @@ func SellProductQuery(productId int, clientId int, quantity int, accountId int, 
 
 		// 获取当前product_id，batch_id对应的原材料成本
 		var materialCost float64
+		fmt.Print("!!!",ele.EventId)
 		sqlStr := "select cost  from material_moving_recorder where event_id=?" //对所有product进行累计计算
 		err = tx.QueryRow(sqlStr, ele.EventId).Scan(&materialCost)
 		if err != nil {
+			fmt.Printf("get cost failed，err:%s\n", err)
 			return err
 		}
 
