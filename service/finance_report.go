@@ -11,7 +11,7 @@ func FinanceReport(context *gin.Context) {
 
 	db := dao.DB()
 	//查看报表1
-	sqlStr := "select * from material_moving_recorder"
+	sqlStr := "select * from material_moving_record"
 	rows, err := db.Query(sqlStr)
 	if err != nil {
 		fmt.Printf("query data failed，err:%s\n", err)

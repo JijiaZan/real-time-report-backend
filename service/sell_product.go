@@ -51,7 +51,7 @@ func SellProductQuery(productId int, clientId int, quantity int, accountId int, 
 	defer tx.Rollback()
 
 	var count int
-	sqlStr := "select sum(quantity) as count from inventory_moving_recorder where product_id=?" //对所有product进行累计计算
+	sqlStr := "select sum(quantity) as count from inventory_moving_record where product_id=?" //对所有product进行累计计算
 	err = tx.QueryRow(sqlStr, productId).Scan(&count)
 	if err != nil {
 		fmt.Printf("get quantity fail:%s\n", err)
@@ -62,7 +62,7 @@ func SellProductQuery(productId int, clientId int, quantity int, accountId int, 
 	}
 
 	//找到目前未销售完毕的product_id,product_batch_id,sum(quantity) 分组组合
-	sqlStr2 := "select product_id,product_batch_id,sum(quantity),event_id as quantity from inventory_moving_recorder where product_id = ? group by product_batch_id having sum(quantity)>0 order by product_batch_id"
+	sqlStr2 := "select product_id,product_batch_id,sum(quantity),event_id as quantity from inventory_moving_record where product_id = ? group by product_batch_id having sum(quantity)>0 order by product_batch_id"
 	rows, err := tx.Query(sqlStr2, productId)
 	if err != nil {
 		fmt.Printf("query data failed，err:%s\n", err)
@@ -106,7 +106,7 @@ func SellProductQuery(productId int, clientId int, quantity int, accountId int, 
 		// 获取当前product_id，batch_id对应的原材料成本
 		var materialCost float64
 		fmt.Print("!!!",ele.EventId)
-		sqlStr := "select cost  from material_moving_recorder where event_id=?" //对所有product进行累计计算
+		sqlStr := "select cost  from material_moving_record where event_id=?" //对所有product进行累计计算
 		err = tx.QueryRow(sqlStr, ele.EventId).Scan(&materialCost)
 		if err != nil {
 			fmt.Printf("get cost failed，err:%s\n", err)
@@ -114,7 +114,7 @@ func SellProductQuery(productId int, clientId int, quantity int, accountId int, 
 		}
 
 		//循环插入数据
-		sqlStr3 := "insert into inventory_moving_recorder(product_batch_id,event_id,product_id,quantity,cost,date) values(?,?,?,?,?,?)"
+		sqlStr3 := "insert into inventory_moving_record(product_batch_id,event_id,product_id,quantity,cost,date) values(?,?,?,?,?,?)"
 		golangDateTime := time.Now().Format("2006-01-02 15:04:05")
 		if quan >= quantity {
 			// insert inventory opeation
