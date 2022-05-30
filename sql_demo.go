@@ -3,9 +3,10 @@ package main
 import (
 	// _ "github.com/go-sql-driver/mysql"
 	// "database/sql"
-	"github.com/JijiaZan/real-time-report-backend/dao"
-	"log"
-	"fmt"
+	// "github.com/JijiaZan/real-time-report-backend/dao"
+	"github.com/JijiaZan/real-time-report-backend/service"
+	// "log"
+	// "fmt"
 )
 
 func main () {
@@ -15,17 +16,22 @@ func main () {
 	// 	panic(err.Error())
 	// }
 	// Printf("hasfsa")
-	
-	rows, err2 := dao.DB().Query("SELECT VERSION()")
-	defer rows.Close()
-	if err2 != nil {
-		log.Fatal(err2)
-	}
+	service.ListMaterialQuery()
+	// _, err := dao.DB().Exec("INSERT INTO material_moving_recorder VALUES (UUID(), 1, 2, 3, 4, 5, NOW(), 3)")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
-	for rows.Next() {
-		var table string
-		rows.Scan(&table)
-		fmt.Printf(table)
-	}
+	// rows, err2 := dao.DB().Query("SELECT VERSION()")
+	// defer rows.Close()
+	// if err2 != nil {
+	// 	log.Fatal(err2)
+	// }
+
+	// for rows.Next() {
+	// 	var table string
+	// 	rows.Scan(&table)
+	// 	fmt.Printf(table)
+	// }
 }
 
