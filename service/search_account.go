@@ -2,7 +2,7 @@ package service
 
 import (
 	"database/sql"
-	"fmt"
+	"log"
 	"github.com/JijiaZan/real-time-report-backend/dao"
 	"github.com/gin-gonic/gin"
 )
@@ -43,10 +43,13 @@ func SearchAccount(context *gin.Context) {
 
 	account, err := SearchAccountQuery(accountId, db)
 	if err != nil {
-		fmt.Printf("err:%s", err)
+		log.Printf(err)
+		context.JSON(500, gin.H{
+			"message": err.Error(),
+		})
+	} else {
+		context.JSON(200, gin.H{
+			"account": account,
+		})
 	}
-
-	context.JSON(200, gin.H{
-		"account": account,
-	})
 }

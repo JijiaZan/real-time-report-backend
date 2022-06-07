@@ -14,10 +14,10 @@ type PurchaseMaterialRequest struct {
 	AccountID int `json: accountID`
 }
 
-func PurchaseMaterialQuery(req PurchaseMaterialRequest) (string, error) {
+func PurchaseMaterialQuery(req PurchaseMaterialRequest) (error) {
 	tx, err := dao.DB().Begin()
 	if err != nil {
-		return FailMessage, err
+		return err
 	}
 	defer tx.Rollback()
 
@@ -25,14 +25,14 @@ func PurchaseMaterialQuery(req PurchaseMaterialRequest) (string, error) {
 	var eventID string
 	err = tx.QueryRow("SELECT UUID()").Scan(&eventID)
 	if err != nil {
-		return FailMessage, err
+		return err
 	}
 	
 	// get next batchID
 	batchID := -1
 	err = tx.QueryRow("SELECT IFNULL(MAX(material_batch_id), 0) FROM material_moving_record").Scan(&batchID)
 	if err != nil {
-		return FailMessage, err
+		return  err
 	}
 	batchID += 1
 	
@@ -40,7 +40,7 @@ func PurchaseMaterialQuery(req PurchaseMaterialRequest) (string, error) {
 	_, err = tx.Exec("INSERT INTO material_moving_record(event_id, material_batch_id, material_id, vendor_id, quantity, cost, date) VALUES (?, ?, ?, ?, ?, ?, NOW())",
 						eventID, batchID, req.MaterialID, req.VendorID, req.Quantity, req.Cost,)
 	if err != nil {
-		return FailMessage, err
+		return err
 	}
 	
 	// cash flow out
@@ -49,20 +49,24 @@ func PurchaseMaterialQuery(req PurchaseMaterialRequest) (string, error) {
 
 	
 	if err = tx.Commit(); err != nil {
-		return FailMessage, err
+		return err
 	}
-	return "OK", nil
+	return nil
 
 }
 
 func PurchaseMaterial(context *gin.Context) {
 	request := PurchaseMaterialRequest{}
 	context.ShouldBind(&request)
-	msg, err := PurchaseMaterialQuery(request)
+	err := PurchaseMaterialQuery(request)
 	if err != nil {
 		log.Println(err)
+		context.JSON(500, gin.H{
+			"message": err.Error(),
+		})
+	} else {
+		context.JSON(200, gin.H{
+			"message": "Purchase Material Succeed!",
+		})
 	}
-	context.JSON(200, gin.H{
-		"message": msg,
-	})
 }

@@ -18,7 +18,7 @@ type Material struct {
 var FailMessage = "Something wrong with DB, check log"
 
 // specify at most one materialID
-func ListMaterialQuery() ([]Material, string, error) {
+func ListMaterialQuery() ([]Material, error) {
 	rows, err := dao.DB().Query("SELECT material_batch_id, material_id, vendor_id, sum(quantity), sum(cost) " +
 								"FROM material_moving_record " +
 								"GROUP BY material_batch_id " +
@@ -45,9 +45,13 @@ func ListMaterial(context *gin.Context) {
 	curMaterialList, msg, err := ListMaterialQuery()
 	if err != nil {
 		log.Println(err)
+		context.JSON(500, gin.H{
+			"message": err.Error(),
+		})
+	} else {
+		context.JSON(200, gin.H{
+			"message": "OK",
+			"material": curMaterialList,
+		})
 	}
-	context.JSON(200, gin.H{
-		"message": msg,
-		"material": curMaterialList,
-	})
 }
